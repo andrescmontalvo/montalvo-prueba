@@ -12,6 +12,10 @@ import type {
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
 
+import {HeroBanner} from '~/components/HeroBanner';
+import { HOME_BANNER_QUERY } from '~/graphql/banner/ResponsiveImageQuery';
+
+
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
 };
@@ -23,7 +27,11 @@ export async function loader(args: Route.LoaderArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
-  return {...deferredData, ...criticalData};
+  const bannerData = await args.context.storefront.query(
+    HOME_BANNER_QUERY,
+  );
+   console.log('Banner Data:', JSON.stringify(deferredData, null, 2));
+  return {...deferredData, ...criticalData, bannerData};
 }
 
 /**
@@ -62,8 +70,21 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Homepage() {
   const data = useLoaderData<typeof loader>();
+
+  const banners =
+    data.bannerData?.metaobjects?.nodes ?? [];
+
+
   return (
-    <div className="home">
+    <div className="min-h-screen">
+       {/* Hero */}
+        <main className="relative h-[65vh] min-h-[420px] overflow-hidden sm:h-[55vh] md:h-[70vh] lg:h-[75vh]">
+          <HeroBanner
+            banners={banners}
+          />
+
+        </main>
+
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
     </div>
@@ -82,12 +103,14 @@ function FeaturedCollection({
       className="featured-collection"
       to={`/collections/${collection.handle}`}
     >
+      <h1>{collection.title}</h1>
+      
       {image && (
-        <div className="featured-collection-image">
+        <div className="">
           <Image data={image} sizes="100vw" />
         </div>
       )}
-      <h1>{collection.title}</h1>
+      
     </Link>
   );
 }
